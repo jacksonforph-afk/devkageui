@@ -29,13 +29,16 @@ local function RunScript(Config)
         spoofer = window:CreateTab("Spoofer"),
     }
 
-    -- [AUTH TAB - FIXED WITH BUTTON] --
+    -- [AUTH TAB - FINALIZED] --
     local licenseKey = "" 
-    tabs.auth:CreateSection("Key Verification"):CreateTextBox("License Key", "Paste key here", function(val)
+    
+    local authSection = tabs.auth:CreateSection("Key Verification")
+    authSection:CreateTextBox("License Key", "Paste key here", function(val)
         licenseKey = val
     end)
 
-    tabs.auth:CreateSection("Authentication"):CreateButton("Login / Redeem Key", function()
+    local submitSection = tabs.auth:CreateSection("Authentication")
+    submitSection:CreateButton("Login / Redeem Key", function()
         if KeyAuthApp then
             KeyAuthApp:license(licenseKey)
             if KeyAuthApp.response == "Logged in!" then

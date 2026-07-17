@@ -1,6 +1,5 @@
 local function RunScript(Config)
     getgenv().Config = Config
-    -- Force global variable to prevent nil errors
     getgenv().KeyAuthApp = nil 
 
     -- [GUI SETUP] --
@@ -13,7 +12,7 @@ local function RunScript(Config)
         MinWidth = 250, MaxWidth = 900, InitialWidth = 460,
     }, gethui())
 
-    library:SetWindowName("Cloakhook | Loading Auth...")
+    library:SetWindowName("Cloakhook | Connecting...")
 
     -- [KEYAUTH INITIALIZATION] --
     task.spawn(function()
@@ -28,39 +27,41 @@ local function RunScript(Config)
             if initSuccess then
                 getgenv().KeyAuthApp = app
                 library:SetWindowName("Cloakhook | Ready")
-                print("KeyAuth: Initialized successfully.")
+                window:Notify("Cloakware", "System Ready!", 3)
             else
-                warn("KeyAuth Init Failed: " .. tostring(err))
+                library:SetWindowName("Cloakhook | Error")
+                warn("KeyAuth Init Error: " .. tostring(err))
             end
         else
+            library:SetWindowName("Cloakhook | Lib Failed")
             warn("KeyAuth Library Load Failed: " .. tostring(KeyAuth))
         end
     end)
 
-    -- [TABS] --
+    -- [UI SETUP] --
     local tabs = {
         auth = window:CreateTab("Auth"),
         spoofer = window:CreateTab("Spoofer"),
     }
 
-    -- [AUTH TAB] --
     local inputKey = ""
     tabs.auth:CreateSection("Key Verification"):CreateTextBox("License Key", "Paste key here", function(val) inputKey = val end)
     tabs.auth:CreateSection("Actions"):CreateButton("Login", function()
-        if getgenv().KeyAuthApp then
-            getgenv().KeyAuthApp:license(inputKey)
-            if getgenv().KeyAuthApp.response == "Logged in!" then
+        -- The fix: check the global env again
+        local app = getgenv().KeyAuthApp
+        if app then
+            app:license(inputKey)
+            if app.response == "Logged in!" then
                 window:Notify("Cloakware", "Access Granted", 3)
                 library:SetWindowName("Cloakhook | Authenticated")
             else
-                window:Notify("Cloakware", "Error: " .. tostring(getgenv().KeyAuthApp.response), 3)
+                window:Notify("Cloakware", "Error: " .. tostring(app.response), 3)
             end
         else
-            window:Notify("Cloakware", "System Not Ready Yet!", 3)
+            window:Notify("Cloakware", "Connecting... Wait 2s", 3)
         end
     end)
 
-    -- [SPOOFER TAB] --
     tabs.spoofer:CreateSection("Profile Spoofer"):CreateButton("Apply Config", function()
         if getgenv().KeyAuthApp and getgenv().KeyAuthApp.response == "Logged in!" then
             pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/WEFGQERQEGWGE/a/refs/heads/main/UDRCRFRAMESCRIPT.lua"))() end)

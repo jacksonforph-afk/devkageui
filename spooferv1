@@ -29,15 +29,23 @@ local function RunScript(Config)
         spoofer = window:CreateTab("Spoofer"),
     }
 
-    -- [AUTH TAB] --
+    -- [AUTH TAB - FIXED WITH BUTTON] --
+    local licenseKey = "" 
     tabs.auth:CreateSection("Key Verification"):CreateTextBox("License Key", "Paste key here", function(val)
+        licenseKey = val
+    end)
+
+    tabs.auth:CreateSection("Authentication"):CreateButton("Login / Redeem Key", function()
         if KeyAuthApp then
-            KeyAuthApp:license(val)
+            KeyAuthApp:license(licenseKey)
             if KeyAuthApp.response == "Logged in!" then
-                window:Notify("Cloakware", "Access Granted", 3)
+                window:Notify("Cloakware", "Access Granted!", 3)
+                library:SetWindowName("Cloakhook | Authorized")
             else
-                window:Notify("Cloakware", "Login Failed", 3)
+                window:Notify("Cloakware", "Error: " .. tostring(KeyAuthApp.response), 3)
             end
+        else
+            window:Notify("Cloakware", "Auth not initialized!", 3)
         end
     end)
 

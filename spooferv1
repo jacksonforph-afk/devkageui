@@ -1,96 +1,55 @@
--- HOSTED ON GITHUB (e.g., raw.githubusercontent.com/...)
-local function RunScript(Data)
-    getgenv().Config = Data
-    -- [local Config = {
-    victim = 62536494,
-    helper = "devkage",
-    level = 572,
-    streak = 2345,
-    elo = 56382,
-    keys = "2354",
-    premium = true,
-    verified = false,
-    unlockall = true,
-    platform = "DESKTOP",
-    join = "discord.gg/6QmhF4aHAS",
-    name = "Devkage's Application",
-    ownerid = "7N9mfQfXml",
-    secret = "261e3c647b89bcb0d621252189213e280c0c654141557a9cd8d669b38b3cfec1",
-    version = "1.0"
-}
-getgenv().Config = Config
+local function RunScript(Config)
+    getgenv().Config = Config
 
-local KeyAuth = loadstring(game:HttpGet("https://raw.githubusercontent.com/KeyAuth/new-keyauth-lua-lib/main/library.lua"))()
-local KeyAuthApp = KeyAuth.new(Config.name, Config.ownerid, Config.secret, Config.version)
-KeyAuthApp:init()
+    -- [GUI SETUP] --
+    local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/nfpw/XXSCRIPT/refs/heads/main/Library/Module.lua"))()
+    local window = library:CreateWindow({
+        Color = Color3.fromRGB(255, 255, 255),
+        Keybind = Enum.KeyCode.RightShift,
+        Assets = false,
+        MinHeight = 45, MaxHeight = 250, InitialHeight = 300,
+        MinWidth = 250, MaxWidth = 900, InitialWidth = 460,
+    }, gethui())
 
-local _stbl; _stbl = hookfunction(getrenv().setmetatable, newcclosure(function(tbl, mt)
-    if mt and typeof(mt) == "table" and rawget(mt, "__mode") == "kv" then
-        local tr = debug.traceback()
-        if tr:find("MiscellaneousController") then return _stbl({1,2,3}, {}) end
-    end
-    return _stbl(tbl, mt)
-end))
+    library:SetWindowName("Cloakhook | Initializing...")
 
-coroutine.wrap(function()
+    -- [KEYAUTH] --
+    local KeyAuthApp
     pcall(function()
-        local function _proc(o)
-            pcall(function()
-                if o:IsA("LocalScript") or o:IsA("ModuleScript") then
-                    local _s, nm = pcall(function() return o.Name:lower() end)
-                    if not _s or not nm then return end
-                    local _tags = {"anticheat","ac","detection","ban","kick","security","moderation"}
-                    for _i = 1, #_tags do if nm:find(_tags[_i]) then pcall(function() o.Disabled = true end) break end end
-                end
-            end)
-        end
-        pcall(function() for _, d in pairs(game:GetDescendants()) do _proc(d) end end)
-        game.DescendantAdded:Connect(_proc)
+        local KeyAuth = loadstring(game:HttpGet("https://raw.githubusercontent.com/KeyAuth/new-keyauth-lua-lib/main/library.lua"))()
+        KeyAuthApp = KeyAuth.new(Config.name, Config.ownerid, Config.secret, Config.version)
+        KeyAuthApp:init()
     end)
-end)()
 
-getgenv().gui_config = {
-    Color = Color3.fromRGB(255, 255, 255),
-    Keybind = Enum.KeyCode.RightShift,
-    Assets = false,
-    MinHeight = 45, MaxHeight = 250, InitialHeight = 300,
-    MinWidth = 250, MaxWidth = 900, InitialWidth = 460,
-}
+    library:SetWindowName("Cloakhook | Authenticated")
 
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/nfpw/XXSCRIPT/refs/heads/main/Library/Module.lua"))()
-local window = library:CreateWindow(getgenv().gui_config, gethui())
-library:SetWindowName("Cloakhook | Authentication Required")
+    -- [TABS] --
+    local tabs = {
+        auth = window:CreateTab("Auth"),
+        spoofer = window:CreateTab("Spoofer"),
+    }
 
-local tabs = {
-    auth = window:CreateTab("Auth"),
-    spoofer = window:CreateTab("Spoofer"),
-    visuals = window:CreateTab("World"),
-}
+    -- [AUTH TAB] --
+    tabs.auth:CreateSection("Key Verification"):CreateTextBox("License Key", "Paste key here", function(val)
+        if KeyAuthApp then
+            KeyAuthApp:license(val)
+            if KeyAuthApp.response == "Logged in!" then
+                window:Notify("Cloakware", "Access Granted", 3)
+            else
+                window:Notify("Cloakware", "Login Failed", 3)
+            end
+        end
+    end)
 
-local sec_auth = tabs.auth:CreateSection("Key Verification")
-local inputKey = ""
-sec_auth:CreateTextBox("License Key", "Paste key here", function(val) inputKey = val end)
-sec_auth:CreateButton("Login", function()
-    KeyAuthApp:license(inputKey)
-    if KeyAuthApp.response == "Logged in!" then
-        library:SetWindowName("Cloakhook | Authenticated")
-        window:Notify("Cloakware", "Access Granted", 3)
-    else
-        window:Notify("Cloakware", "Login Failed: " .. KeyAuthApp.response, 3)
-    end
-end)
-
-local sec_spoofer = tabs.spoofer:CreateSection("Profile Spoofer")
-sec_spoofer:CreateButton("Apply Saved Config", function()
-    if KeyAuthApp.response == "Logged in!" then
-        getgenv().Config = Config
-        pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/WEFGQERQEGWGE/a/refs/heads/main/UDRCRFRAMESCRIPT.lua"))() end)
-        window:Notify("Cloakware", "Config Applied Successfully", 3)
-    else
-        window:Notify("Cloakware", "Login Required", 3)
-    end
-end)] --
-    -- Ensure the obfuscated code refers to getgenv().Config for its values --
+    -- [SPOOFER TAB] --
+    tabs.spoofer:CreateSection("Profile Spoofer"):CreateButton("Apply Saved Config", function()
+        if KeyAuthApp and KeyAuthApp.response == "Logged in!" then
+            pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/WEFGQERQEGWGE/a/refs/heads/main/UDRCRFRAMESCRIPT.lua"))() end)
+            window:Notify("Cloakware", "Applied Config for: " .. Config.helper, 3)
+        else
+            window:Notify("Cloakware", "Login Required", 3)
+        end
+    end)
 end
 
 return RunScript

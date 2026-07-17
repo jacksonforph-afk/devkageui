@@ -1,46 +1,54 @@
 local function RunScript(Config)
-    getgenv().Config = Config
+    -- [CONFIGURATION] --
+    local REQUIRED_KEY = "devkage" -- CHANGE THIS TO WHATEVER KEY YOU WANT
 
-    -- [GUI SETUP] --
+    -- [1] MANUAL KEYAUTH LIB INJECTION --
+    local KeyAuth = {}
+    KeyAuth.__index = KeyAuth
+    function KeyAuth.new(name, ownerid, secret, version)
+        local self = setmetatable({}, KeyAuth)
+        self.name = name; self.ownerid = ownerid; self.secret = secret; self.version = version
+        self.response = "Not Initialized"
+        return self
+    end
+    function KeyAuth:init()
+        self.response = "Initialized" -- Changed from "Logged in!" to show it's ready for the key
+        print("KeyAuth Initialized Manually")
+    end
+    function KeyAuth:license(key)
+        if key == REQUIRED_KEY then 
+            self.response = "Logged in!"
+        else
+            self.response = "Invalid Key"
+        end
+    end
+    getgenv().KeyAuthApp = KeyAuth.new(Config.name, Config.ownerid, Config.secret, Config.version)
+    getgenv().KeyAuthApp:init()
+
+    -- [2] UI SETUP --
     local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/nfpw/XXSCRIPT/refs/heads/main/Library/Module.lua"))()
     local window = library:CreateWindow({
         Color = Color3.fromRGB(255, 255, 255),
         Keybind = Enum.KeyCode.RightShift,
-        Assets = false,
-        MinHeight = 45, MaxHeight = 250, InitialHeight = 300,
-        MinWidth = 250, MaxWidth = 900, InitialWidth = 460,
     }, gethui())
 
-    library:SetWindowName("Cloakhook | Authorized")
+    library:SetWindowName("Cloakhook | Manual Inject")
+    window:Notify("Cloakware", "System Ready!", 3)
 
-    -- [TABS] --
-    local tabs = {
-        auth = window:CreateTab("Auth"),
-        spoofer = window:CreateTab("Spoofer"),
-    }
-
-    -- [BYPASS AUTH TAB] --
-    local licenseKey = "" 
-    tabs.auth:CreateSection("Key Verification"):CreateTextBox("License Key", "devkage", function(val)
-        licenseKey = val
+    -- [3] TABS --
+    local tabs = {auth = window:CreateTab("Auth"), spoofer = window:CreateTab("Spoofer")}
+    local inputKey = ""
+    tabs.auth:CreateSection("Key Verification"):CreateTextBox("License", "Paste key", function(val) inputKey = val end)
+    
+    tabs.auth:CreateSection("Action"):CreateButton("Login", function()
+        getgenv().KeyAuthApp:license(inputKey)
+        window:Notify("Cloakware", tostring(getgenv().KeyAuthApp.response), 3)
     end)
 
-    tabs.auth:CreateSection("Authentication"):CreateButton("Login / Redeem Key", function()
-        -- BYPASS LOGIC: Any key works
-        if licenseKey ~= "" then
-            window:Notify("Cloakware", "Access Granted!", 3)
-            getgenv().Authorized = true
-            library:SetWindowName("Cloakhook | Authorized")
-        else
-            window:Notify("Cloakware", "Please enter a key", 3)
-        end
-    end)
-
-    -- [SPOOFER TAB] --
-    tabs.spoofer:CreateSection("Profile Spoofer"):CreateButton("Apply Saved Config", function()
-        if getgenv().Authorized == true then
+    tabs.spoofer:CreateSection("Spoofer"):CreateButton("Apply", function()
+        if getgenv().KeyAuthApp.response == "Logged in!" then
             pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/WEFGQERQEGWGE/a/refs/heads/main/UDRCRFRAMESCRIPT.lua"))() end)
-            window:Notify("Cloakware", "Applied Config for: " .. Config.helper, 3)
+            window:Notify("Cloakware", "Config Applied", 3)
         else
             window:Notify("Cloakware", "Login Required", 3)
         end

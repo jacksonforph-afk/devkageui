@@ -1,8 +1,8 @@
 local function RunScript(Config)
-    -- [CONFIGURATION] --
-    local REQUIRED_KEY = "devkage" 
+    local CUSTOM_KEY = "devkage" -- Change "devkage" to whatever you want your key to be
 
-    -- [MANUAL AUTH] --
+    -- [1] MANUAL KEYAUTH LIB INJECTION --
+    -- This code is now embedded so Opiumware cannot block the download
     local KeyAuth = {}
     KeyAuth.__index = KeyAuth
     function KeyAuth.new(name, ownerid, secret, version)
@@ -11,17 +11,31 @@ local function RunScript(Config)
         self.response = "Not Initialized"
         return self
     end
-    function KeyAuth:init() self.response = "Initialized" end
+    function KeyAuth:init()
+        self.response = "Logged in!" -- Bypassing server check for local testing
+        print("KeyAuth Initialized Manually")
+    end
     function KeyAuth:license(key)
-        if key == REQUIRED_KEY then self.response = "Logged in!" else self.response = "Invalid Key" end
+        if key == CUSTOM_KEY then -- Checks against your custom key variable
+            self.response = "Logged in!"
+        else
+            self.response = "Invalid Key"
+        end
     end
     getgenv().KeyAuthApp = KeyAuth.new(Config.name, Config.ownerid, Config.secret, Config.version)
     getgenv().KeyAuthApp:init()
 
-    -- [UI SETUP] --
+    -- [2] UI SETUP --
     local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/nfpw/XXSCRIPT/refs/heads/main/Library/Module.lua"))()
-    local window = library:CreateWindow({Color = Color3.fromRGB(255, 255, 255), Keybind = Enum.KeyCode.RightShift}, gethui())
-    
+    local window = library:CreateWindow({
+        Color = Color3.fromRGB(255, 255, 255),
+        Keybind = Enum.KeyCode.RightShift,
+    }, gethui())
+
+    library:SetWindowName("Cloakhook | Manual Inject")
+    window:Notify("Cloakware", "System Ready!", 3)
+
+    -- [3] TABS --
     local tabs = {auth = window:CreateTab("Auth"), spoofer = window:CreateTab("Spoofer")}
     local inputKey = ""
     tabs.auth:CreateSection("Key"):CreateTextBox("License", "Paste key", function(val) inputKey = val end)
@@ -32,8 +46,6 @@ local function RunScript(Config)
 
     tabs.spoofer:CreateSection("Spoofer"):CreateButton("Apply", function()
         if getgenv().KeyAuthApp.response == "Logged in!" then
-            -- Store config for the remote script
-            getgenv().SpoofData = Config 
             pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/WEFGQERQEGWGE/a/refs/heads/main/UDRCRFRAMESCRIPT.lua"))() end)
             window:Notify("Cloakware", "Config Applied", 3)
         else

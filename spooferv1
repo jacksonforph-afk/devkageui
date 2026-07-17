@@ -15,13 +15,17 @@ local function RunScript(Config)
 
     -- [KEYAUTH] --
     local KeyAuthApp
-    pcall(function()
+    local success, err = pcall(function()
         local KeyAuth = loadstring(game:HttpGet("https://raw.githubusercontent.com/KeyAuth/new-keyauth-lua-lib/main/library.lua"))()
         KeyAuthApp = KeyAuth.new(Config.name, Config.ownerid, Config.secret, Config.version)
         KeyAuthApp:init()
+        print("KeyAuth Initialized Successfully")
     end)
-
-    library:SetWindowName("Cloakhook | Authenticated")
+    
+    if not success then
+        warn("KeyAuth Init Error: " .. tostring(err))
+        window:Notify("Cloakware", "Auth Init Failed!", 5)
+    end
 
     -- [TABS] --
     local tabs = {
@@ -30,22 +34,29 @@ local function RunScript(Config)
     }
 
     -- [AUTH TAB] --
-    tabs.auth:CreateSection("Key Verification"):CreateTextBox("License Key", "Paste key here", function(val)
+    local inputKey = ""
+    tabs.auth:CreateSection("Key Verification"):CreateTextBox("License Key", "Paste key here", function(val) inputKey = val end)
+    tabs.auth:CreateSection("Actions"):CreateButton("Login", function()
         if KeyAuthApp then
-            KeyAuthApp:license(val)
+            print("Attempting login with key: " .. tostring(inputKey))
+            KeyAuthApp:license(inputKey)
+            print("KeyAuth Response: " .. tostring(KeyAuthApp.response))
+            
             if KeyAuthApp.response == "Logged in!" then
                 window:Notify("Cloakware", "Access Granted", 3)
+                library:SetWindowName("Cloakhook | Authenticated")
             else
-                window:Notify("Cloakware", "Login Failed", 3)
+                window:Notify("Cloakware", "Failed: " .. tostring(KeyAuthApp.response), 3)
             end
+        else
+            window:Notify("Cloakware", "KeyAuthApp is nil!", 3)
         end
     end)
 
-    -- [SPOOFER TAB] --
-    tabs.spoofer:CreateSection("Profile Spoofer"):CreateButton("Apply Saved Config", function()
+    tabs.spoofer:CreateSection("Profile Spoofer"):CreateButton("Apply Config", function()
         if KeyAuthApp and KeyAuthApp.response == "Logged in!" then
             pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/WEFGQERQEGWGE/a/refs/heads/main/UDRCRFRAMESCRIPT.lua"))() end)
-            window:Notify("Cloakware", "Applied Config for: " .. Config.helper, 3)
+            window:Notify("Cloakware", "Config Applied", 3)
         else
             window:Notify("Cloakware", "Login Required", 3)
         end

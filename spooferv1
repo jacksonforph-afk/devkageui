@@ -1,22 +1,20 @@
-local function RunScript(Config)
-    print("RunScript started")
-    
-    local success, library = pcall(function()
-        return loadstring(game:HttpGet("https://raw.githubusercontent.com/nfpw/XXSCRIPT/refs/heads/main/Library/Module.lua"))()
-    end)
+-- NO FUNCTIONS, JUST DIRECT EXECUTION
+print("Attempting to load UI...")
 
-    if not success then
-        warn("Library failed: " .. tostring(library))
-        return
-    end
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/nfpw/XXSCRIPT/refs/heads/main/Library/Module.lua"))()
 
-    local window = library:CreateWindow({
-        Color = Color3.fromRGB(255, 255, 255),
-        Keybind = Enum.KeyCode.RightShift,
-    }, gethui())
-    
-    window:Notify("Cloakware", "Successfully Loaded", 3)
-    print("UI Created")
-end
+local window = library:CreateWindow({
+    Color = Color3.fromRGB(255, 255, 255),
+    Keybind = Enum.KeyCode.RightShift,
+    Assets = false,
+    MinHeight = 45, MaxHeight = 250, InitialHeight = 300,
+    MinWidth = 250, MaxWidth = 900, InitialWidth = 460,
+}, gethui())
 
-return RunScript
+library:SetWindowName("Cloakhook | Direct Mode")
+window:Notify("Cloakware", "UI Loaded Successfully", 3)
+
+local tab = window:CreateTab("Test")
+tab:CreateSection("Status"):CreateButton("Close", function() library:Unload() end)
+
+print("UI Should be visible now.")

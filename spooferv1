@@ -1,20 +1,21 @@
--- NO FUNCTIONS, JUST DIRECT EXECUTION
-print("Attempting to load UI...")
+local function RunScript(Config)
+    local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/nfpw/XXSCRIPT/refs/heads/main/Library/Module.lua"))()
+    local window = library:CreateWindow({Color = Color3.fromRGB(255, 255, 255), Keybind = Enum.KeyCode.RightShift}, gethui())
 
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/nfpw/XXSCRIPT/refs/heads/main/Library/Module.lua"))()
-
-local window = library:CreateWindow({
-    Color = Color3.fromRGB(255, 255, 255),
-    Keybind = Enum.KeyCode.RightShift,
-    Assets = false,
-    MinHeight = 45, MaxHeight = 250, InitialHeight = 300,
-    MinWidth = 250, MaxWidth = 900, InitialWidth = 460,
-}, gethui())
-
-library:SetWindowName("Cloakhook | Direct Mode")
-window:Notify("Cloakware", "UI Loaded Successfully", 3)
-
-local tab = window:CreateTab("Test")
-tab:CreateSection("Status"):CreateButton("Close", function() library:Unload() end)
-
-print("UI Should be visible now.")
+    library:SetWindowName("Cloakhook | Testing...")
+    
+    -- FORCE A CONNECTION TEST
+    task.spawn(function()
+        print("Starting Connection Test...")
+        local success, res = pcall(function() return game:HttpGet("https://www.google.com") end)
+        
+        if success then
+            library:SetWindowName("Cloakhook | Connection Success")
+            print("Connection Test Passed: " .. string.sub(res, 1, 50))
+        else
+            library:SetWindowName("Cloakhook | Connection Failed")
+            warn("CONNECTION TEST FAILED: " .. tostring(res))
+        end
+    end)
+end
+return RunScript

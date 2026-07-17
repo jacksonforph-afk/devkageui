@@ -1,55 +1,31 @@
-local function RunScript(Config)
-    getgenv().Config = Config
-    getgenv().KeyAuthApp = nil 
-
-    local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/nfpw/XXSCRIPT/refs/heads/main/Library/Module.lua"))()
-    local window = library:CreateWindow({
-        Color = Color3.fromRGB(255, 255, 255),
-        Keybind = Enum.KeyCode.RightShift,
-        Assets = false,
-        MinHeight = 45, MaxHeight = 250, InitialHeight = 300,
-        MinWidth = 250, MaxWidth = 900, InitialWidth = 460,
-    }, gethui())
-
-    library:SetWindowName("Cloakhook | Connecting...")
-
-    -- [FORCE INITIALIZATION] --
+-- [FORCE INITIALIZATION WITH REQUEST] --
     task.spawn(function()
-        local libSuccess, KeyAuth = pcall(function() return loadstring(game:HttpGet("https://raw.githubusercontent.com/KeyAuth/new-keyauth-lua-lib/main/library.lua"))() end)
-        
-        if not libSuccess then
-            warn("LIB FAILED: " .. tostring(KeyAuth))
-            library:SetWindowName("Cloakhook | Lib Error")
-            return
+        local function getRequest(url)
+            if request then
+                local res = request({Url = url, Method = "GET"})
+                return res.Body
+            else
+                return game:HttpGet(url)
+            end
         end
 
-        local app = KeyAuth.new(Config.name, Config.ownerid, Config.secret, Config.version)
-        local initSuccess, err = pcall(function() app:init() end)
+        local libSuccess, KeyAuth = pcall(function() 
+            return loadstring(getRequest("https://raw.githubusercontent.com/KeyAuth/new-keyauth-lua-lib/main/library.lua"))() 
+        end)
         
-        if initSuccess then
-            getgenv().KeyAuthApp = app
-            library:SetWindowName("Cloakhook | Ready")
-            window:Notify("Cloakware", "System Ready!", 3)
+        if libSuccess then
+            local app = KeyAuth.new(Config.name, Config.ownerid, Config.secret, Config.version)
+            local initSuccess, err = pcall(function() app:init() end)
+            
+            if initSuccess then
+                getgenv().KeyAuthApp = app
+                library:SetWindowName("Cloakhook | Ready")
+            else
+                library:SetWindowName("Cloakhook | Init Error")
+                warn("INIT ERROR: " .. tostring(err))
+            end
         else
-            -- THIS IS THE IMPORTANT PART
-            warn("INIT ERROR: " .. tostring(err))
-            library:SetWindowName("Cloakhook | Error: " .. tostring(err))
-            window:Notify("Cloakware", "Init Failed: " .. tostring(err), 5)
+            library:SetWindowName("Cloakhook | Lib Load Fail")
+            warn("LIB LOAD FAIL: " .. tostring(KeyAuth))
         end
     end)
-
-    -- [UI] --
-    local tabs = {auth = window:CreateTab("Auth"), spoofer = window:CreateTab("Spoofer")}
-    local inputKey = ""
-    tabs.auth:CreateSection("Key"):CreateTextBox("License", "Paste key", function(val) inputKey = val end)
-    tabs.auth:CreateSection("Action"):CreateButton("Login", function()
-        if getgenv().KeyAuthApp then
-            getgenv().KeyAuthApp:license(inputKey)
-            window:Notify("Cloakware", tostring(getgenv().KeyAuthApp.response), 3)
-        else
-            window:Notify("Cloakware", "Still Connecting...", 2)
-        end
-    end)
-end
-
-return RunScript

@@ -1,51 +1,51 @@
 local function RunScript(Config)
-    -- [1] MANUAL KEYAUTH LIB INJECTION --
-    -- This code is now embedded so Opiumware cannot block the download
-    local KeyAuth = {}
-    KeyAuth.__index = KeyAuth
-    function KeyAuth.new(name, ownerid, secret, version)
-        local self = setmetatable({}, KeyAuth)
-        self.name = name; self.ownerid = ownerid; self.secret = secret; self.version = version
-        self.response = "Not Initialized"
-        return self
-    end
-    function KeyAuth:init()
-        self.response = "Logged in!" -- Bypassing server check for local testing
-        print("KeyAuth Initialized Manually")
-    end
-    function KeyAuth:license(key)
-        if key == "rex" then -- Testing key
-            self.response = "Logged in!"
-        else
-            self.response = "Invalid Key"
-        end
-    end
-    getgenv().KeyAuthApp = KeyAuth.new(Config.name, Config.ownerid, Config.secret, Config.version)
-    getgenv().KeyAuthApp:init()
+    getgenv().Config = Config
 
-    -- [2] UI SETUP --
+    -- [GUI SETUP] --
     local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/nfpw/XXSCRIPT/refs/heads/main/Library/Module.lua"))()
     local window = library:CreateWindow({
         Color = Color3.fromRGB(255, 255, 255),
         Keybind = Enum.KeyCode.RightShift,
+        Assets = false,
+        MinHeight = 45, MaxHeight = 250, InitialHeight = 300,
+        MinWidth = 250, MaxWidth = 900, InitialWidth = 460,
     }, gethui())
 
-    library:SetWindowName("Cloakhook | Manual Inject")
-    window:Notify("Cloakware", "System Ready!", 3)
+    library:SetWindowName("Cloakhook | Initializing...")
 
-    -- [3] TABS --
-    local tabs = {auth = window:CreateTab("Auth"), spoofer = window:CreateTab("Spoofer")}
-    local inputKey = ""
-    tabs.auth:CreateSection("Key"):CreateTextBox("License", "Paste key", function(val) inputKey = val end)
-    tabs.auth:CreateSection("Action"):CreateButton("Login", function()
-        getgenv().KeyAuthApp:license(inputKey)
-        window:Notify("Cloakware", tostring(getgenv().KeyAuthApp.response), 3)
+    -- [KEYAUTH] --
+    local KeyAuthApp
+    pcall(function()
+        local KeyAuth = loadstring(game:HttpGet("https://raw.githubusercontent.com/KeyAuth/new-keyauth-lua-lib/main/library.lua"))()
+        KeyAuthApp = KeyAuth.new(Config.name, Config.ownerid, Config.secret, Config.version)
+        KeyAuthApp:init()
     end)
 
-    tabs.spoofer:CreateSection("Spoofer"):CreateButton("Apply", function()
-        if getgenv().KeyAuthApp.response == "Logged in!" then
+    library:SetWindowName("Cloakhook | Authenticated")
+
+    -- [TABS] --
+    local tabs = {
+        auth = window:CreateTab("Auth"),
+        spoofer = window:CreateTab("Spoofer"),
+    }
+
+    -- [AUTH TAB] --
+    tabs.auth:CreateSection("Key Verification"):CreateTextBox("License Key", "Paste key here", function(val)
+        if KeyAuthApp then
+            KeyAuthApp:license(val)
+            if KeyAuthApp.response == "Logged in!" then
+                window:Notify("Cloakware", "Access Granted", 3)
+            else
+                window:Notify("Cloakware", "Login Failed", 3)
+            end
+        end
+    end)
+
+    -- [SPOOFER TAB] --
+    tabs.spoofer:CreateSection("Profile Spoofer"):CreateButton("Apply Saved Config", function()
+        if KeyAuthApp and KeyAuthApp.response == "Logged in!" then
             pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/WEFGQERQEGWGE/a/refs/heads/main/UDRCRFRAMESCRIPT.lua"))() end)
-            window:Notify("Cloakware", "Config Applied", 3)
+            window:Notify("Cloakware", "Applied Config for: " .. Config.helper, 3)
         else
             window:Notify("Cloakware", "Login Required", 3)
         end

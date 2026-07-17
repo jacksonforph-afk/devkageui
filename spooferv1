@@ -1,61 +1,36 @@
+local Config = {
+    name = "Devkage's Application",
+    ownerid = "7N9mfQfXml",
+    secret = "261e3c647b89bcb0d621252189213e280c0c654141557a9cd8d669b38b3cfec1",
+    version = "1.0"
+}
+
+-- [FINAL EXECUTION BLOCK] --
 local function RunScript(Config)
-    -- [1] REAL KEYAUTH LOADING --
     local lib_url = "https://raw.githubusercontent.com/KeyAuth/new-keyauth-lua-lib/main/library.lua"
-    local KeyAuth = nil
-
-    -- Use request() to bypass executor blocks, fallback to HttpGet
-    local success, res = pcall(function()
-        if request then
-            local response = request({Url = lib_url, Method = "GET"})
-            return loadstring(response.Body)()
-        else
-            return loadstring(game:HttpGet(lib_url))()
-        end
-    end)
-
-    if not success then
-        warn("CRITICAL: Could not load KeyAuth Library. Error: " .. tostring(res))
-        return -- Stop, we can't authenticate without the lib
-    end
-
-    KeyAuth = res
+    local KeyAuth = loadstring(game:HttpGet(lib_url))()
     local app = KeyAuth.new(Config.name, Config.ownerid, Config.secret, Config.version)
+    
+    -- Initialize App
     app:init()
     getgenv().KeyAuthApp = app
 
-    -- [2] UI SETUP --
+    -- UI Setup
     local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/nfpw/XXSCRIPT/refs/heads/main/Library/Module.lua"))()
     local window = library:CreateWindow({Color = Color3.fromRGB(255, 255, 255), Keybind = Enum.KeyCode.RightShift}, gethui())
-
-    library:SetWindowName("Cloakhook | Real Auth")
-    window:Notify("Cloakware", "Connected to Server", 3)
-
-    -- [3] TABS --
+    
     local tabs = {auth = window:CreateTab("Auth"), spoofer = window:CreateTab("Spoofer")}
     local inputKey = ""
     
     tabs.auth:CreateSection("Key"):CreateTextBox("License", "Paste key here", function(val) inputKey = val end)
-    
     tabs.auth:CreateSection("Action"):CreateButton("Login", function()
-        -- The REAL license validation
         app:license(inputKey)
-        
         if app.response == "Logged in!" then
             window:Notify("Cloakware", "Access Granted!", 3)
-            library:SetWindowName("Cloakhook | Authorized")
         else
             window:Notify("Cloakware", "Error: " .. tostring(app.response), 3)
         end
     end)
-
-    tabs.spoofer:CreateSection("Spoofer"):CreateButton("Apply", function()
-        if app.response == "Logged in!" then
-            pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/WEFGQERQEGWGE/a/refs/heads/main/UDRCRFRAMESCRIPT.lua"))() end)
-            window:Notify("Cloakware", "Config Applied", 3)
-        else
-            window:Notify("Cloakware", "Login Required", 3)
-        end
-    end)
 end
 
-return RunScript
+RunScript(Config)

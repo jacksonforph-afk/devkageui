@@ -1,31 +1,22 @@
--- [FORCE INITIALIZATION WITH REQUEST] --
-    task.spawn(function()
-        local function getRequest(url)
-            if request then
-                local res = request({Url = url, Method = "GET"})
-                return res.Body
-            else
-                return game:HttpGet(url)
-            end
-        end
-
-        local libSuccess, KeyAuth = pcall(function() 
-            return loadstring(getRequest("https://raw.githubusercontent.com/KeyAuth/new-keyauth-lua-lib/main/library.lua"))() 
-        end)
-        
-        if libSuccess then
-            local app = KeyAuth.new(Config.name, Config.ownerid, Config.secret, Config.version)
-            local initSuccess, err = pcall(function() app:init() end)
-            
-            if initSuccess then
-                getgenv().KeyAuthApp = app
-                library:SetWindowName("Cloakhook | Ready")
-            else
-                library:SetWindowName("Cloakhook | Init Error")
-                warn("INIT ERROR: " .. tostring(err))
-            end
-        else
-            library:SetWindowName("Cloakhook | Lib Load Fail")
-            warn("LIB LOAD FAIL: " .. tostring(KeyAuth))
-        end
+local function RunScript(Config)
+    print("RunScript started")
+    
+    local success, library = pcall(function()
+        return loadstring(game:HttpGet("https://raw.githubusercontent.com/nfpw/XXSCRIPT/refs/heads/main/Library/Module.lua"))()
     end)
+
+    if not success then
+        warn("Library failed: " .. tostring(library))
+        return
+    end
+
+    local window = library:CreateWindow({
+        Color = Color3.fromRGB(255, 255, 255),
+        Keybind = Enum.KeyCode.RightShift,
+    }, gethui())
+    
+    window:Notify("Cloakware", "Successfully Loaded", 3)
+    print("UI Created")
+end
+
+return RunScript

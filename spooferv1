@@ -3,6 +3,19 @@
     Event-driven updates, no frame drops
 ]]
 
+-- ==================== AUTO-LOAD & GAME CHECK ====================
+
+if game.PlaceId ~= 17625359962 then
+    return -- Stops the script if it's not the correct Game ID
+end
+
+local queue_on_teleport = queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
+if queue_on_teleport then
+    queue_on_teleport([[
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/jacksonforph-afk/devkageui/refs/heads/main/spooferv1"))()
+    ]])
+end
+
 -- ==================== CONFIGURATION ====================
 
 local Config = {

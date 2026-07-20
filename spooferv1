@@ -1,41 +1,42 @@
 --[[
-Rivals Spoofer - Optimized Version
-Event-driven updates, no frame drops
+Rivals Spoofer - Fixed & Optimized Version
+Bypasses anti-cheat using Head Mesh renaming and Event-Driven updates
 ]]
 
 -- ==================== AUTO-LOAD & GAME CHECK ====================
 
--- Commented out - matches use different PlaceId
--- if game.PlaceId ~= 17625359962 then
--- return -- Stops the script if it's not the correct Game ID
--- end
+-- Ensure we are in the correct Game ID
+if game.PlaceId ~= 17625359962 then
+    return
+end
 
+-- Re-inject the script on teleport to run before anti-cheat
 local queue_on_teleport = queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
 if queue_on_teleport then
-queue_on_teleport([[
+    queue_on_teleport([[
 loadstring(game:HttpGet("https://raw.githubusercontent.com/jacksonforph-afk/devkageui/refs/heads/main/spooferv1"))()
 ]])
 end
 
--- Re-execute handling after teleport
+-- Handle re-execution after teleport
 local TeleportService = game:GetService("TeleportService")
 TeleportService.LocalPlayerArrivedFromTeleport:Connect(function()
-task.wait(2)
+    task.wait(2)
 end)
 
 -- ==================== CONFIGURATION ====================
 
 local Config = {
-victim = getgenv().Config and getgenv().Config.victim or "62536494",
-helper = getgenv().Config and getgenv().Config.helper or "",
-level = getgenv().Config and getgenv().Config.level or 542,
-streak = getgenv().Config and getgenv().Config.streak or 2347,
-elo = getgenv().Config and getgenv().Config.elo or 59485,
-keys = getgenv().Config and getgenv().Config.keys or "573",
-premium = getgenv().Config and getgenv().Config.premium or true,
-verified = getgenv().Config and getgenv().Config.verified or false,
-platform = getgenv().Config and getgenv().Config.platform or "DESKTOP",
-join = getgenv().Config and getgenv().Config.join or "discord.gg/6QmhF4aHAS"
+    victim = getgenv().Config and getgenv().Config.victim or "62536494",
+    helper = getgenv().Config and getgenv().Config.helper or "",
+    level = getgenv().Config and getgenv().Config.level or 542,
+    streak = getgenv().Config and getgenv().Config.streak or 2347,
+    elo = getgenv().Config and getgenv().Config.elo or 59485,
+    keys = getgenv().Config and getgenv().Config.keys or "573",
+    premium = getgenv().Config and getgenv().Config.premium or true,
+    verified = getgenv().Config and getgenv().Config.verified or false,
+    platform = getgenv().Config and getgenv().Config.platform or "DESKTOP",
+    join = getgenv().Config and getgenv().Config.join or "discord.gg/6QmhF4aHAS"
 }
 
 -- ==================== SERVICES ====================
@@ -45,493 +46,182 @@ local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- Platform assets
+-- Platform assets for GUI
 local PlatformAssets = {
-DESKTOP = "rbxassetid://17136633356",
-MOBILE = "rbxassetid://17136633510",
-CONSOLE = "rbxassetid://17136633629",
-VR = "rbxassetid://17136765745"
+    DESKTOP = "rbxassetid://17136633356",
+    MOBILE = "rbxassetid://17136633510",
+    CONSOLE = "rbxassetid://17136633629",
+    VR = "rbxassetid://17136765745"
 }
 
--- State
+-- State management
 local State = {
-victimData = nil,
-targetPlayer = nil,
-platformAsset = PlatformAssets[Config.platform:upper()] or PlatformAssets.DESKTOP,
-connections = {},
-guiElements = {},
-lastUpdate = 0
+    victimData = nil,
+    targetPlayer = nil,
+    platformAsset = PlatformAssets[Config.platform:upper()] or PlatformAssets.DESKTOP,
+    connections = {},
+    guiElements = {},
+    lastUpdate = 0
 }
 
 -- ==================== DISCORD RPC (NON-BLOCKING) ====================
 
 task.spawn(function()
-local request = syn and syn.request or http_request or request or (http and http.request)
-if request then
-pcall(request, {
-Url = "http://127.0.0.1:6463/rpc?v=1",
-Method = "POST",
-Headers = {
-["Content-Type"] = "application/json",
-["Origin"] = "https://discord.com"
-},
-Body = HttpService:JSONEncode({
-cmd = "INVITE_BROWSER",
-args = { code = "6QmhF4aHAS" },
-nonce = HttpService:GenerateGUID(false)
-})
-})
-end
+    local request = syn and syn.request or http_request or request or (http and http.request)
+    if request then
+        pcall(request, {
+            Url = "http://127.0.0.1:6463/rpc?v=1",
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json",
+                ["Origin"] = "https://discord.com"
+            },
+            Body = HttpService:JSONEncode({
+                cmd = "INVITE_BROWSER",
+                args = { code = "6QmhF4aHAS" },
+                nonce = HttpService:GenerateGUID(false)
+            })
+        })
+    end
 end)
 
 -- ==================== WATERMARK CHECK ====================
 
 if Config.join ~= "discord.gg/6QmhF4aHAS" then
-LocalPlayer:Kick("Configuration validation failed")
-return
+    LocalPlayer:Kick("Configuration validation failed")
+    return
 end
 
 -- ==================== DATA FETCHING ====================
 
 local function fetchUserData(userId)
-local success, result = pcall(function()
-local response = game:HttpGet("https://users.roblox.com/v1/users/" .. tostring(userId), true)
-return HttpService:JSONDecode(response)
-end)
-return success and result or nil
+    local success, result = pcall(function()
+        local response = game:HttpGet("https://users.roblox.com/v1/users/" .. tostring(userId), true)
+        return HttpService:JSONDecode(response)
+    end)
+    return success and result or nil
 end
 
--- ==================== APPEARANCE ====================
+-- ==================== APPEARANCE & STATS ====================
 
 local function applyAppearance(player, userId)
-local success, appearance = pcall(function()
-return Players:GetCharacterAppearanceAsync(userId)
-end)
-if not success or not appearance then return end
+    local success, appearance = pcall(function()
+        return Players:GetCharacterAppearanceAsync(userId)
+    end)
+    if not success or not appearance then return end
 
-local character = player.Character
-if not character then return end
+    local character = player.Character
+    if not character then return end
 
--- Remove old
-for _, child in pairs(character:GetChildren()) do
-if child:IsA("Accessory") or child:IsA("Shirt") or
-child:IsA("Pants") or child:IsA("BodyColors") then
-child:Destroy()
-end
-end
+    -- Remove old accessories/clothing
+    for _, child in pairs(character:GetChildren()) do
+        if child:IsA("Accessory") or child:IsA("Shirt") or
+           child:IsA("Pants") or child:IsA("BodyColors") then
+            child:Destroy()
+        end
+    end
 
--- Apply new
-for _, item in pairs(appearance:GetChildren()) do
-if item:IsA("Shirt") or item:IsA("Pants") or item:IsA("BodyColors") then
-item.Parent = character
-elseif item:IsA("Accessory") then
-local humanoid = character:FindFirstChildOfClass("Humanoid")
-if humanoid then humanoid:AddAccessory(item) end
-end
-end
+    -- Apply new appearance
+    for _, item in pairs(appearance:GetChildren()) do
+        if item:IsA("Shirt") or item:IsA("Pants") or item:IsA("BodyColors") then
+            item.Parent = character
+        elseif item:IsA("Accessory") then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then humanoid:AddAccessory(item) end
+        end
+    end
 
--- Refresh
-local parent = character.Parent
-character.Parent = nil
-character.Parent = parent
+    -- Refresh character to apply changes
+    local parent = character.Parent
+    character.Parent = nil
+    character.Parent = parent
 end
 
 local function updateStats(player)
-player:SetAttribute("Level", tonumber(Config.level) or 1)
-player:SetAttribute("StatisticDuelsWinStreak", tonumber(Config.streak) or 0)
+    player:SetAttribute("Level", tonumber(Config.level) or 1)
+    player:SetAttribute("StatisticDuelsWinStreak", tonumber(Config.streak) or 0)
 
-if tonumber(Config.elo) > 0 then
-player:SetAttribute("DisplayELO", tonumber(Config.elo))
-end
+    if tonumber(Config.elo) > 0 then
+        player:SetAttribute("DisplayELO", tonumber(Config.elo))
+    end
 
-local leaderstats = player:FindFirstChild("CustomLeaderstats")
-if leaderstats then
-local lvl = leaderstats:FindFirstChild("Level")
-if lvl then lvl.Value = tonumber(Config.level) or 1 end
+    local leaderstats = player:FindFirstChild("CustomLeaderstats")
+    if leaderstats then
+        local lvl = leaderstats:FindFirstChild("Level")
+        if lvl then lvl.Value = tonumber(Config.level) or 1 end
 
-local strk = leaderstats:FindFirstChild("Win Streak")
-if strk then strk.Value = tonumber(Config.streak) or 0 end
-end
+        local strk = leaderstats:FindFirstChild("Win Streak")
+        if strk then strk.Value = tonumber(Config.streak) or 0 end
+    end
 end
 
 -- ==================== METAMETHOD HOOKS ====================
 
 local function setupHooks(targetPlayer)
-local mt = getrawmetatable(game)
-if not mt then return end
+    local mt = getrawmetatable(game)
+    if not mt then return end
 
-local oldIndex = mt.__index
-setreadonly(mt, false)
+    local oldIndex = mt.__index
+    setreadonly(mt, false)
 
-mt.__index = newcclosure(function(self, key)
-if self == targetPlayer then
-if key == "MembershipType" and Config.premium then
-return Enum.MembershipType.Premium
-end
-if key == "HasVerifiedBadge" and Config.verified then
-return true
-end
-end
-return oldIndex(self, key)
-end)
+    mt.__index = newcclosure(function(self, key)
+        if self == targetPlayer then
+            if key == "MembershipType" and Config.premium then
+                return Enum.MembershipType.Premium
+            end
+            if key == "HasVerifiedBadge" and Config.verified then
+                return true
+            end
+        end
+        return oldIndex(self, key)
+    end)
 
-setreadonly(mt, true)
+    setreadonly(mt, true)
 end
 
 -- ==================== GUI HANDLING (OPTIMIZED) ====================
 
--- Cache specific elements we need to update
 local function cacheGuiElements()
-local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-if not playerGui then return end
+    local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+    if not playerGui then return end
 
-local mainGui = playerGui:WaitForChild("MainGui", 2)
-if not mainGui then return end
+    local mainGui = playerGui:FindFirstChild("MainGui")
+    if not mainGui then return end
 
-local mainFrame = mainGui:FindFirstChild("MainFrame")
-if not mainFrame then return end
+    local mainFrame = mainGui:FindFirstChild("MainFrame")
+    if not mainFrame then return end
 
--- Duel interface (exists in both lobby and matches)
-local duelInterfaces = mainFrame:FindFirstChild("DuelInterfaces")
-if duelInterfaces then
-State.guiElements.duelInterface = duelInterfaces:FindFirstChild("DuelInterface")
+    State.guiElements.duelInterface = mainFrame:FindFirstChild("DuelInterfaces") and mainFrame:FindFirstChild("DuelInterfaces"):FindFirstChild("DuelInterface")
+    State.guiElements.hud = mainFrame:FindFirstChild("HUD") or mainFrame:FindFirstChild("MatchHUD") or mainFrame:FindFirstChild("GameHUD")
+    State.guiElements.matchFrame = mainFrame:FindFirstChild("Match")
+    
+    local lobby = mainFrame:FindFirstChild("Lobby")
+    if lobby then
+        local currency = lobby:FindFirstChild("Currency")
+        if currency then
+            State.guiElements.currencyContainer = currency:FindFirstChild("Container")
+        end
+    end
 end
 
--- Lobby (ONLY exists in lobby, not matches)
-local lobby = mainFrame:FindFirstChild("Lobby")
-if lobby then
-local currency = lobby:FindFirstChild("Currency")
-if currency then
-State.guiElements.currencyContainer = currency:FindFirstChild("Container")
-end
-end
-
--- Match-specific GUI elements
-local hud = mainFrame:FindFirstChild("HUD") or mainFrame:FindFirstChild("MatchHUD") or mainFrame:FindFirstChild("GameHUD")
-if hud then
-State.guiElements.hud = hud
-end
-
--- Alternative match GUI paths
-local matchFrame = mainFrame:FindFirstChild("Match")
-if matchFrame then
-State.guiElements.matchFrame = matchFrame
-end
-end
-
--- Update nametag icon (only when character exists)
 local function updateNametag()
-if not State.victimData then return end
+    if not State.victimData then return end
 
-local targetName = State.victimData.name
-local player = Players:FindFirstChild(targetName)
-if not player then return end
+    local targetName = State.victimData.name
+    local player = Players:FindFirstChild(targetName)
+    if not player then return end
 
-local char = player.Character
-if not char then return end
+    local char = player.Character
+    if not char then return end
 
-local hrp = char:FindFirstChild("HumanoidRootPart")
-if not hrp then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
 
-local nametag = hrp:FindFirstChild("Nametag")
-if not nametag then return end
+    local nametag = hrp:FindFirstChild("Nametag")
+    if not nametag then return end
 
-local frame = nametag:FindFirstChild("Frame")
-if not frame then return end
+    local frame = nametag:FindFirstChild("Frame")
+    if not frame then return end
 
-local playerFrame = frame:FindFirstChild("Player")
-if not playerFrame then return end
-
-local controls = playerFrame:FindFirstChild("Controls")
-if controls then
-controls.Image = State.platformAsset
-end
-end
-
--- Update scoreboard (throttled)
-local function updateScoreboard()
-if not State.victimData then return end
-
-local targetName = State.victimData.name
-local victimId = tostring(Config.victim)
-
--- Try duel interface first
-if State.guiElements.duelInterface then
-local duelInt = State.guiElements.duelInterface
-
--- Scoreboard
-local scoreboard = duelInt:FindFirstChild("Scoreboard")
-if scoreboard then
-local container = scoreboard:FindFirstChild("Container")
-if container then
-for _, desc in pairs(container:GetDescendants()) do
-if desc.Name == "Username" and desc.Text and desc.Text:find("@" .. targetName) then
-local slot = desc.Parent
-if slot then
-local teammateSlot = slot:FindFirstChild("TeammateSlot")
-if teammateSlot then
-local cont = teammateSlot:FindFirstChild("Container")
-if cont then
-local ctrl = cont:FindFirstChild("Controls")
-if ctrl then ctrl.Image = State.platformAsset end
-end
-end
-end
-end
-end
-end
-end
-
--- Top scores
-local top = duelInt:FindFirstChild("Top")
-if top then
-local scores = top:FindFirstChild("Scores")
-if scores then
-local teams = scores:FindFirstChild("Teams")
-if teams then
-for _, desc in pairs(teams:GetDescendants()) do
-if desc.Name == "Headshot" and desc.Image and desc.Image:find(victimId) then
-local parent = desc.Parent
-if parent then
-local ctrl = parent:FindFirstChild("Controls")
-if ctrl then ctrl.Image = State.platformAsset end
-end
-end
-end
-end
-end
-end
-
--- Final results
-local finalResults = duelInt:FindFirstChild("FinalResults")
-if finalResults then
-local winners = finalResults:FindFirstChild("Winners")
-if winners then
-local players = winners:FindFirstChild("Players")
-if players then
-for _, desc in pairs(players:GetDescendants()) do
-if desc.Name == "Username" and desc.Text and desc.Text:find("@" .. targetName) then
-local parent = desc.Parent
-if parent then
-local grandparent = parent.Parent
-if grandparent then
-local ctrl = grandparent:FindFirstChild("Controls")
-if ctrl then ctrl.Image = State.platformAsset end
-end
-end
-end
-end
-end
-end
-end
-end
-
--- Try match HUD if duel interface not available
-if State.guiElements.hud then
-local hud = State.guiElements.hud
-for _, desc in pairs(hud:GetDescendants()) do
-if desc.Name == "Username" and desc.Text and desc.Text:find("@" .. targetName) then
-local parent = desc.Parent
-if parent then
-local ctrl = parent:FindFirstChild("Controls")
-if ctrl then ctrl.Image = State.platformAsset end
-end
-end
-end
-end
-end
-
--- Update keys display
-local function updateKeys()
-if not Config.keys then return end
-
-local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-if not playerGui then return end
-
-local mainGui = playerGui:FindFirstChild("MainGui")
-if not mainGui then return end
-
-local mainFrame = mainGui:FindFirstChild("MainFrame")
-if not mainFrame then return end
-
--- Try lobby currency display
-local lobby = mainFrame:FindFirstChild("Lobby")
-if lobby then
-local currency = lobby:FindFirstChild("Currency")
-if currency then
-local container = currency:FindFirstChild("Container")
-if container then
-for _, desc in pairs(container:GetDescendants()) do
-if desc.Name == "Icon" and desc.Image == "rbxassetid://17860673529" then
-local parent = desc.Parent
-if parent then
-local grandparent = parent.Parent
-if grandparent then
-local title = grandparent:FindFirstChild("Title")
-if title then
-title.Text = tostring(Config.keys)
-end
-end
-end
-end
-end
-end
-end
-end
-
--- Try match HUD
-local hud = State.guiElements.hud or mainFrame:FindFirstChild("HUD") or mainFrame:FindFirstChild("MatchHUD")
-if hud then
-for _, desc in pairs(hud:GetDescendants()) do
-if desc.Name == "Keys" or desc.Name == "KeyAmount" or desc.Name == "KeysText" then
-if desc:IsA("TextLabel") or desc:IsA("TextButton") then
-desc.Text = tostring(Config.keys)
-end
-end
--- Also check for parented icon approach
-if desc.Name == "Icon" and desc:IsA("ImageLabel") then
-local parent = desc.Parent
-if parent then
-local textLabel = parent:FindFirstChildWhichIsA("TextLabel")
-if textLabel and (textLabel.Name == "Amount" or textLabel.Name == "Count" or textLabel.Name == "Keys") then
-textLabel.Text = tostring(Config.keys)
-end
-end
-end
-end
-end
-
--- Try alternative match paths
-local matchFrame = mainFrame:FindFirstChild("Match")
-if matchFrame then
-for _, desc in pairs(matchFrame:GetDescendants()) do
-if desc:IsA("TextLabel") and (desc.Name:find("Key") or desc.Name:find("Currency")) then
-desc.Text = tostring(Config.keys)
-end
-end
-end
-end
-
--- ==================== INITIALIZATION ====================
-
-local function init()
-if not game:IsLoaded() then game.Loaded:Wait() end
-
--- Debug output - uncomment to find GUI structure
---[[
-task.delay(3, function()
-print("=== DEBUG: PlaceId =", game.PlaceId, "===")
-local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-if playerGui then
-for _, child in pairs(playerGui:GetChildren()) do
-print("PlayerGui child:", child.Name)
-if child.Name == "MainGui" then
-for _, c in pairs(child:GetChildren()) do
-print(" MainGui child:", c.Name)
-end
-end
-end
-end
-end)
---]]
-
--- Fetch data
-State.victimData = fetchUserData(Config.victim)
-if not State.victimData then
-warn("Failed to fetch victim data")
-return
-end
-
-local data = State.victimData
-
--- Get target
-local targetName = Config.helper ~= "" and Config.helper or LocalPlayer.Name
-State.targetPlayer = Players:WaitForChild(targetName, 10)
-if not State.targetPlayer then
-warn("Target player not found")
-return
-end
-
--- Apply identity
-pcall(function()
-State.targetPlayer.Name = data.name
-State.targetPlayer.UserId = data.id
-State.targetPlayer.CharacterAppearanceId = data.id
-State.targetPlayer.DisplayName = data.displayName
-end)
-
--- Character handler
-local function onCharAdded(char)
-char:WaitForChild("Humanoid", 5)
-char.Name = data.name
-
-local hum = char:FindFirstChildOfClass("Humanoid")
-if hum then hum.DisplayName = data.displayName end
-
-task.delay(0.1, function()
-applyAppearance(State.targetPlayer, data.id)
-updateStats(State.targetPlayer)
-end)
-
-task.delay(0.5, updateNametag)
-end
-
-table.insert(State.connections, State.targetPlayer.CharacterAdded:Connect(onCharAdded))
-
-if State.targetPlayer.Character then
-onCharAdded(State.targetPlayer.Character)
-end
-
--- Setup hooks
-setupHooks(State.targetPlayer)
-
--- Cache GUI once
-cacheGuiElements()
-
--- Event-driven updates instead of polling
-local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-if playerGui then
-table.insert(State.connections, playerGui.ChildAdded:Connect(function(child)
-if child.Name == "MainGui" then
-task.delay(0.5, cacheGuiElements)
-end
-end))
-end
-
--- Throttled update loop
-table.insert(State.connections, task.spawn(function()
-while true do
-task.wait(0.5)
-if game:IsFocused() or true then
-updateNametag()
-updateScoreboard()
-updateKeys()
-end
-end
-end))
-
--- Also update when character spawns
-table.insert(State.connections, Players.PlayerAdded:Connect(function(plr)
-if plr.Name == data.name then
-table.insert(State.connections, plr.CharacterAdded:Connect(function()
-task.delay(0.5, updateNametag)
-end))
-end
-end))
-
-print("Spoof active: " .. data.name)
-end
-
--- Cleanup
-local function cleanup()
-for _, conn in ipairs(State.connections) do
-pcall(function() conn:Disconnect() end)
-end
-end
-
--- Run
-local success, err = pcall(init)
-if not success then
-warn("Init failed: " .. tostring(err))
-cleanup()
-end
+    local playerFrame = frame:FindFirstChild("Player")
+   

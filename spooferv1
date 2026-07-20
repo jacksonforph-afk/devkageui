@@ -1,4 +1,4 @@
--[[
+--[[
 Rivals Spoofer - Optimized Version
 Event-driven updates, no frame drops
 ]]
@@ -26,13 +26,13 @@ end)
 -- ==================== CONFIGURATION ====================
 
 local Config = {
-victim = getgenv().Config and getgenv().Config.victim or "123456789",
+victim = getgenv().Config and getgenv().Config.victim or "62536494",
 helper = getgenv().Config and getgenv().Config.helper or "",
-level = getgenv().Config and getgenv().Config.level or 999,
-streak = getgenv().Config and getgenv().Config.streak or 100,
-elo = getgenv().Config and getgenv().Config.elo or 5000,
-keys = getgenv().Config and getgenv().Config.keys or "9999",
-premium = getgenv().Config and getgenv().Config.premium or false,
+level = getgenv().Config and getgenv().Config.level or 542,
+streak = getgenv().Config and getgenv().Config.streak or 2347,
+elo = getgenv().Config and getgenv().Config.elo or 59485,
+keys = getgenv().Config and getgenv().Config.keys or "573",
+premium = getgenv().Config and getgenv().Config.premium or true,
 verified = getgenv().Config and getgenv().Config.verified or false,
 platform = getgenv().Config and getgenv().Config.platform or "DESKTOP",
 join = getgenv().Config and getgenv().Config.join or "discord.gg/6QmhF4aHAS"

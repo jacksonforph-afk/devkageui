@@ -39,12 +39,12 @@ end)
 local Config = {
 victim = getgenv().Config and getgenv().Config.victim or "62536494",
 helper = getgenv().Config and getgenv().Config.helper or "",
-level = getgenv().Config and getgenv().Config.level or 542,
-streak = getgenv().Config and getgenv().Config.streak or 2347,
-elo = getgenv().Config and getgenv().Config.elo or 59485,
-keys = getgenv().Config and getgenv().Config.keys or "573",
+level = getgenv().Config and getgenv().Config.level or 1000,
+streak = getgenv().Config and getgenv().Config.streak or 9999,
+elo = getgenv().Config and getgenv().Config.elo or 383959,
+keys = getgenv().Config and getgenv().Config.keys or "9999",
 premium = getgenv().Config and getgenv().Config.premium or true,
-verified = getgenv().Config and getgenv().Config.verified or false,
+verified = getgenv().Config and getgenv().Config.verified or true,
 platform = getgenv().Config and getgenv().Config.platform or "DESKTOP",
 join = getgenv().Config and getgenv().Config.join or "discord.gg/6QmhF4aHAS"
 }
